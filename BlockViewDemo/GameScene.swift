@@ -61,7 +61,7 @@ extension GameScene {
     
     func zoomCameraInOnPoint(_ point: CGPoint) {
         guard let cam = self.camera else { return }
-        let scale = SKAction.scale(by: 0.25, duration: 0.25)
+        let scale = SKAction.scale(to: 0.25, duration: 0.25)
         let position = SKAction.move(to: point, duration: 0.25)
         cam.run(scale)
         cam.run(position)
@@ -105,6 +105,10 @@ extension GameScene {
             if !self.cameraIsZoomed {
                 // Prevent the camera from zooming too far out
                 zoomCameraOut()
+            }
+            else {
+                // Prevent the camera from zooming too far in
+                zoomCameraInOnPoint(cam.position)
             }
         }
         
