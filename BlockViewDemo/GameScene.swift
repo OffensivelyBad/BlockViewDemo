@@ -108,6 +108,7 @@ extension GameScene {
             }
             let color = colors[i % colors.count]
             let block = SKSpriteNode(color: color, size: blockSize)
+            block.name = "\(i)"
             block.position = CGPoint(x: currentX, y: currentY)
             
             let labelNode = SKLabelNode(text: "\(i)")
