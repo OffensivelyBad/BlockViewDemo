@@ -106,7 +106,7 @@ extension GameScene {
                 // Prevent the camera from zooming too far out
                 zoomCameraOut()
             }
-            else {
+            else if cam.xScale < 0.25 {
                 // Prevent the camera from zooming too far in
                 zoomCameraInOnPoint(cam.position)
             }
