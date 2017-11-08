@@ -17,31 +17,29 @@ class GameScene: SKScene {
         super.didMove(to: view)
         setupCamera()
         createBlocks(2000)
+        
+        // create gesture to zoom
+        let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(GameScene.handlePinch(_:)))
+        self.view?.addGestureRecognizer(pinchGesture)
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard !self.cameraIsZoomed else { return }
-        guard let touch = touches.first else { return }
-        self.cameraIsZoomed = true
-        zoomCameraInOnPoint(touch.location(in: self))
+        guard let touch = touches.first, touch.tapCount == 2 else { return }
+        self.cameraIsZoomed = !self.cameraIsZoomed
+        if self.cameraIsZoomed {
+            // Zoom in on the tap point
+            zoomCameraInOnPoint(touch.location(in: self))
+        }
+        else {
+            // Zoom out
+            zoomCameraOut()
+        }
     }
-    
+
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard self.cameraIsZoomed else { return }
         guard let touch = touches.first else { return }
         panCameraToPoint(touch.previousLocation(in: self), endPoint: touch.location(in: self))
-    }
-    
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard self.cameraIsZoomed else { return }
-        self.cameraIsZoomed = false
-        zoomCameraOut()
-    }
-    
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard self.cameraIsZoomed else { return }
-        self.cameraIsZoomed = false
-        zoomCameraOut()
     }
     
     override func update(_ currentTime: TimeInterval) {
@@ -71,7 +69,7 @@ extension GameScene {
     
     func zoomCameraOut() {
         guard let cam = self.camera else { return }
-        let scale = SKAction.scale(by: 4, duration: 0.25)
+        let scale = SKAction.scale(to: 1, duration: 0.25)
         let position = SKAction.move(to: CGPoint.zero, duration: 0.25)
         cam.run(scale)
         cam.run(position)
@@ -81,8 +79,35 @@ extension GameScene {
         guard let cam = self.camera else { return }
         let changeX = startPoint.x - endPoint.x
         let changeY = startPoint.y - endPoint.y
-        cam.position.x += changeX
-        cam.position.y += changeY
+        var newX = cam.position.x + changeX
+        var newY = cam.position.y + changeY
+        
+        // Clamp the camera position to not allow the view to move more than halfway off the screen
+        if abs(newX) > self.size.width / 2 {
+            newX = newX < 0 ? -self.size.width / 2 : self.size.width / 2
+        }
+        if abs(newY) > self.size.height / 2 {
+            newY = newY < 0 ? -self.size.height / 2 : self.size.height / 2
+        }
+        
+        cam.position.x = newX
+        cam.position.y = newY
+    }
+    
+    @objc func handlePinch(_ sender: UIPinchGestureRecognizer) {
+        guard let cam = self.camera else { return }
+        let pinch = SKAction.scale(by: sender.scale, duration: 0.0)
+        cam.run(pinch.reversed())
+        sender.scale = 1
+        
+        if sender.state == .ended {
+            self.cameraIsZoomed = cam.xScale < 1 ? true : false
+            if !self.cameraIsZoomed {
+                // Prevent the camera from zooming too far out
+                zoomCameraOut()
+            }
+        }
+        
     }
     
 }
